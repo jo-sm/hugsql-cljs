@@ -1,7 +1,7 @@
-(ns hugsql.core
-  (:require [hugsql.parser :as parser]
-            [hugsql.parameters :as parameters]
-            [hugsql.adapter :as adapter]
+(ns hugsql-cljs.core
+  (:require [hugsql-cljs.parser :as parser]
+            [hugsql-cljs.parameters :as parameters]
+            [hugsql-cljs.adapter :as adapter]
             [clojure.string :as string]
             [cljs.tools.reader.edn :as edn]))
 

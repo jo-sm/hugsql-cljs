@@ -1,4 +1,4 @@
-(ns hugsql.parameters
+(ns hugsql-cljs.parameters
   (:require [clojure.string :as string]))
 
 (defprotocol ValueParam

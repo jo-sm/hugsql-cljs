@@ -1,4 +1,4 @@
-(ns hugsql.adapter)
+(ns hugsql-cljs.adapter)
 
 (defprotocol HugsqlAdapter
   "Hugsql Adapter Protocol"

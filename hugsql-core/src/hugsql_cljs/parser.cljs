@@ -1,4 +1,4 @@
-(ns hugsql.parser
+(ns hugsql-cljs.parser
   (:require [clojure.string :as string]
             [cljs.tools.reader.reader-types :as r]))
 
