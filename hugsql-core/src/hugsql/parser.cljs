@@ -1,6 +1,6 @@
 (ns hugsql.parser
   (:require [clojure.string :as string]
-            [clojure.tools.reader.reader-types :as r]))
+            [cljs.tools.reader.reader-types :as r]))
 
 (defn- parse-error
   ([rdr msg]
@@ -17,12 +17,12 @@
      (throw (ex-info msg (merge data {:error :parse-error}))))))
 
 (defn- sb-append
-  [^StringBuilder sb ^Character c]
-  (doto sb (.append c)))
+  [s c]
+  (.concat s c))
 
-(defn- whitespace? [^Character c]
+(defn- whitespace? [c]
   (when c
-    (Character/isWhitespace ^Character c)))
+    (.test #"^\s$" c)))
 
 (defn- symbol-char?
   [c]
@@ -60,7 +60,7 @@
   "Read and return a string up to the encountered char `c`.
    Does not read the encountered character."
   [rdr c]
-  (loop [s (StringBuilder.)
+  (loop [s ""
          pc (r/peek-char rdr)]
     (if (or (nil? pc) (= c pc))
       (str s)
@@ -71,7 +71,7 @@
   "Read and return a string up to the encountered chars `c1` and `c2`.
    Does not read the encountered characters"
   [rdr c1 c2]
-  (loop [s (StringBuilder.)
+  (loop [s ""
          rc (r/read-char rdr)
          pc (r/peek-char rdr)]
     (if (or (nil? rc) (nil? pc)
@@ -84,7 +84,7 @@
 (defn- read-keyword
   [rdr]
   (loop [result {}
-         s  (StringBuilder.)
+         s  ""
          rc (r/read-char rdr)
          pc (r/peek-char rdr)]
     (let [pgcast? (and (= \: rc) (= \: pc))]
@@ -101,14 +101,14 @@
         (= \: rc)
         ;; This is the end of the type specification.
         (recur (assoc result :type (str s))
-               (StringBuilder.)
+               ""
                (r/read-char rdr)
                (r/peek-char rdr))
 
         (= \/ rc)
         ;; This is the end of the namespace.
         (recur (assoc result :namespace (str s))
-               (StringBuilder.)
+               ""
                (r/read-char rdr)
                (r/peek-char rdr))
 
@@ -220,7 +220,7 @@
 (defn- read-sql-quoted
   [rdr c]
   (let [quot c]
-    (loop [s (sb-append (StringBuilder.) c)
+    (loop [s (sb-append "" c)
            c (r/read-char rdr)]
       (condp = c
         nil    (parse-error rdr "SQL String terminated unexpectedly with EOF")
@@ -262,7 +262,7 @@
      (throw (ex-info "SQL is empty" {}))
      (let [sql (string/replace sql "\r\n" "\n")
            rdr (r/source-logging-push-back-reader sql)
-           nsb #(StringBuilder.)]
+           nsb (fn [] "")]
        (loop [hdr {}
               sql []
               sb  (nsb)
@@ -309,10 +309,8 @@
                  (recur hdr (conj sql (str sb) x) (nsb) all))
                (recur hdr sql sb all))
 
-
-             ;; quoted SQL (which cannot contain hugsql params,
+;; quoted SQL (which cannot contain hugsql params,
              ;; so we consider them separately here before
-
 
              (sql-quoted-start? c)
              (recur hdr sql (sb-append sb (read-sql-quoted rdr c)) all)

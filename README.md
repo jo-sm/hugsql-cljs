@@ -1,4 +1,4 @@
-# HugSQL
+# HugSQL CLJS
 
 ![alt tag](https://raw.github.com/layerware/hugsql/master/logo/hugsql_alpha_128.png)
 
