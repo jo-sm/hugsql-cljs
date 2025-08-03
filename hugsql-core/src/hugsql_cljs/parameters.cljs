@@ -1,51 +1,6 @@
 (ns hugsql-cljs.parameters
   (:require [clojure.string :as string]))
 
-(defprotocol ValueParam
-  "Protocol to convert Clojure value to SQL value"
-  (value-param [param data options]))
-
-(defprotocol ValueParamList
-  "Protocol to convert a collection of Clojure
-   values to SQL values. Similar to a TupleParam,
-   but a ValueParamList does NOT enclose its values
-   in parentheses.  Generally ValueParamList values
-   are of the same type."
-  (value-param-list [param data options]))
-
-(defprotocol TupleParam
-  "Protocol to convert a collection of Clojure
-   values to an SQL tuple. Similar to a ValueParamList,
-   but a TupleParam encloses its values in parentheses."
-  (tuple-param [param data options]))
-
-(defprotocol TupleParamList
-  "Protocol to convert a collection of collections of
-   Clojure values to an SQL list of tuples.  This is
-   used specifically for multiple-record SQL inserts."
-  (tuple-param-list [param data options]))
-
-(defprotocol IdentifierParam
-  "Protocol to convert a Clojure value to SQL identifier"
-  (identifier-param [param data options]))
-
-(defprotocol IdentifierParamList
-  "Protocol to convert a collection of Clojure
-   values to SQL identifiers"
-  (identifier-param-list [param data options]))
-
-(defprotocol SQLParam
-  "Protocol to convert a Clojure value to raw SQL"
-  (sql-param [param data options]))
-
-(defprotocol SQLVecParam
-  "Protocol to splice in an sqlvec (or snippet)"
-  (sqlvec-param [param data options]))
-
-(defprotocol SQLVecParamList
-  "Protocol to splice in a collection of sqlvecs (or snippets)"
-  (sqlvec-param-list [param data options]))
-
 (defn identifier-param-quote
   "Quote the identifier value based on options."
   [value {:keys [quoting no-dot-split] :as options}]
@@ -77,73 +32,62 @@
              (mapv kwfn (rest nams)))
       (mapv kwfn nams))))
 
-;; Default Object implementations
-(extend-type Object
-  ValueParam
-  (value-param [param data options]
-    ["?" (get-in data (deep-get-vec (:name param)))])
+(defn value-param [param data _options]
+  ["?" (get-in data (deep-get-vec (:name param)))])
 
-  ValueParamList
-  (value-param-list [param data options]
-    (let [coll (get-in data (deep-get-vec (:name param)))]
-      (apply vector
-             (string/join "," (repeat (count coll) "?"))
-             coll)))
+(defn value-param-list [param data _options]
+  (let [coll (get-in data (deep-get-vec (:name param)))]
+    (apply vector
+           (string/join "," (repeat (count coll) "?"))
+           coll)))
 
-  TupleParam
-  (tuple-param [param data options]
-    (let [vpl (value-param-list param data options)]
-      (apply vector (str "(" (first vpl) ")") (rest vpl))))
+(defn tuple-param [param data options]
+  (let [vpl (value-param-list param data options)]
+    (apply vector (str "(" (first vpl) ")") (rest vpl))))
 
-  TupleParamList
-  (tuple-param-list [param data options]
-    (let [tuples (map (juxt first rest)
-                      (map #(tuple-param {:name :x} {:x %} options)
-                           (get-in data (deep-get-vec (:name param)))))
-          sql (string/join "," (map first tuples))
-          values (apply concat (apply concat (map rest tuples)))]
-      (apply vector sql values)))
+(defn tuple-param-list [param data options]
+  (let [tuples (map (juxt first rest)
+                    (map #(tuple-param {:name :x} {:x %} options)
+                         (get-in data (deep-get-vec (:name param)))))
+        sql (string/join "," (map first tuples))
+        values (apply concat (apply concat (map rest tuples)))]
+    (apply vector sql values)))
 
-  IdentifierParam
-  (identifier-param [param data options]
-    (let [i (get-in data (deep-get-vec (:name param)))
-          coll? (seqable? i)
-          i (if coll? (flatten (into [] i)) i)]
-      (if coll?
-        [(str (identifier-param-quote (first i) options)
-              " as "
-              (identifier-param-quote (second i)
-                                      (merge options {:no-dot-split true})))]
-        [(identifier-param-quote i options)])))
+(defn identifier-param [param data options]
+  (let [i (get-in data (deep-get-vec (:name param)))
+        param-is-coll? (coll? i)
+        i (if param-is-coll? (flatten (into [] i)) i)]
+    (if param-is-coll?
+      [(str (identifier-param-quote (first i) options)
+            " as "
+            (identifier-param-quote (second i)
+                                    (merge options {:no-dot-split true})))]
+      [(identifier-param-quote i options)])))
 
-  IdentifierParamList
-  (identifier-param-list [param data options]
-    [(string/join
-      ", "
-      (map
-       #(if (vector? %)
-          (str (identifier-param-quote (first %) options)
-               " as "
-               (identifier-param-quote (second %)
-                                       (merge options {:no-dot-split true})))
-          (identifier-param-quote % options))
-       (into [] (get-in data (deep-get-vec (:name param))))))])
+(defn identifier-param-list [param data options]
+  [(string/join
+    ", "
+    (map
+     #(if (vector? %)
+        (str (identifier-param-quote (first %) options)
+             " as "
+             (identifier-param-quote (second %)
+                                     (merge options {:no-dot-split true})))
+        (identifier-param-quote % options))
+     (into [] (get-in data (deep-get-vec (:name param))))))])
 
-  SQLParam
-  (sql-param [param data options]
-    [(get-in data (deep-get-vec (:name param)))])
+(defn sql-param [param data options]
+  [(get-in data (deep-get-vec (:name param)))])
 
-  SQLVecParam
-  (sqlvec-param [param data options]
-    (get-in data (deep-get-vec (:name param))))
+(defn sqlvec-param [param data options]
+  (get-in data (deep-get-vec (:name param))))
 
-  SQLVecParamList
-  (sqlvec-param-list [param data options]
-    (reduce
-     #(apply vector
-             (string/join " " [(first %1) (first %2)])
-             (concat (rest %1) (rest %2)))
-     (get-in data (deep-get-vec (:name param))))))
+(defn sqlvec-param-list [param data options]
+  (reduce
+   #(apply vector
+           (string/join " " [(first %1) (first %2)])
+           (concat (rest %1) (rest %2)))
+   (get-in data (deep-get-vec (:name param)))))
 
 (defmulti apply-hugsql-param
   "Implementations of this multimethod apply a hugsql parameter

@@ -26,7 +26,7 @@
 
 (defn- symbol-char?
   [c]
-  (boolean (re-matches #"[\pL\pM\pS\d\_\-\.\+\*\?\:\/%]" (str c))))
+  (boolean (re-matches #"(?u)[\p{L}\p{M}\p{S}\d_\-\.\+\*\?:\/%]" (str c))))
 
 (defn- skip-ws-to-next-line
   "Read from reader until a non-whitespace or newline char is encountered."
@@ -293,7 +293,7 @@
                (cond
                  (map? x)
                  ;; if sql is active, then new hdr section
-                 (if (or (> (.length ^StringBuilder sb) 0) (empty? hdr))
+                 (if (or (> (.-length sb) 0) (empty? hdr))
                    (recur (merge x {:file file :line (max 1 (dec (r/get-line-number rdr)))})
                           []
                           (nsb)
@@ -309,7 +309,7 @@
                  (recur hdr (conj sql (str sb) x) (nsb) all))
                (recur hdr sql sb all))
 
-;; quoted SQL (which cannot contain hugsql params,
+             ;; quoted SQL (which cannot contain hugsql params,
              ;; so we consider them separately here before
 
              (sql-quoted-start? c)
