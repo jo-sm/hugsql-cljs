@@ -22,4 +22,4 @@ jobs:
           cli: latest
 
       - name: Test
-        run: clojure -M:test
+        run: clojure -M:test-ci
