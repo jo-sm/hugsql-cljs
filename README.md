@@ -47,7 +47,8 @@ It goes without saying: many thanks to Layerware for the original HugSQL library
 - [Original HugSQL Docs: https://www.hugsql.org](https://www.hugsql.org)
 - [API Docs](https://cljdoc.org/d/com.layerware/hugsql-core/)
 
-Copyright `hugsql` (2b6589f02f6e9052abe2a434bc97b2c5aa532f98 and before) © [Layerware, Inc.](http://www.layerware.com)
-Copyright `hugsql-cljs` (after 2b6589f02f6e9052abe2a434bc97b2c5aa532f98) © Joshua Smock
+Copyright `hugsql` ([2b6589f](https://github.com/jo-sm/hugsql-cljs/commit/2b6589f02f6e9052abe2a434bc97b2c5aa532f98) and before) © [Layerware, Inc.](http://www.layerware.com)
+
+Copyright `hugsql-cljs` ([d56756c](https://github.com/jo-sm/hugsql-cljs/commit/d56756cad12fb6af4145d7a65f00fc0f50eb8ed3) and after) © Joshua Smock
 
 Distributed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.html)
